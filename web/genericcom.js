@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { DefaultExternalServices, PDFViewerApplication } from './app';
 import { BasePreferences } from './preferences';
+import { DefaultExternalServices } from './application';
 import { DownloadManager } from './download_manager';
 import { GenericL10n } from './genericl10n';
 
@@ -45,8 +45,12 @@ GenericExternalServices.createPreferences = function() {
 GenericExternalServices.createL10n = function({ locale = 'en-US', }) {
   return new GenericL10n(locale);
 };
-PDFViewerApplication.externalServices = GenericExternalServices;
+
+function bindExternalServices(app) {
+  app.externalServices = GenericExternalServices;
+}
 
 export {
   GenericCom,
+  bindExternalServices,
 };

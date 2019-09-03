@@ -14,8 +14,7 @@
  */
 
 import { CSS_UNITS, NullL10n } from './ui_utils';
-import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
-import { AppOptions } from './app_options';
+import { bindPDFPrintServiceInstance } from './application';
 import { URL } from 'pdfjs-lib';
 
 let activeService = null;
@@ -23,11 +22,11 @@ let overlayManager = null;
 
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
-function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
+function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size, app) {
   let scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
-  const PRINT_RESOLUTION = AppOptions.get('printResolution') || 150;
+  const PRINT_RESOLUTION = app.appOptions.get('printResolution') || 150;
   const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
@@ -58,7 +57,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
   });
 }
 
-function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
+function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n, app) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
@@ -68,6 +67,7 @@ function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement('canvas');
+  this.app = app;
 }
 
 PDFPrintService.prototype = {
@@ -144,7 +144,7 @@ PDFPrintService.prototype = {
       }
       let index = this.currentPage;
       renderProgress(index, pageCount, this.l10n);
-      renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
+      renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index], this.app)
         .then(this.useRenderedPage.bind(this))
         .then(function() {
           renderNextPage(resolve, reject);
@@ -320,9 +320,9 @@ if ('onbeforeprint' in window) {
 }
 
 let overlayPromise;
-function ensureOverlay() {
+function ensureOverlay(app) {
   if (!overlayPromise) {
-    overlayManager = PDFViewerApplication.overlayManager;
+    overlayManager = app.overlayManager;
     if (!overlayManager) {
       throw new Error('The overlay manager has not yet been initialized.');
     }
@@ -334,7 +334,7 @@ function ensureOverlay() {
   return overlayPromise;
 }
 
-PDFPrintServiceFactory.instance = {
+let externalServices = {
   supportsPrinting: true,
 
   createPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
@@ -342,10 +342,12 @@ PDFPrintServiceFactory.instance = {
       throw new Error('The print service is created and active.');
     }
     activeService = new PDFPrintService(pdfDocument, pagesOverview,
-                                        printContainer, l10n);
+      printContainer, l10n);
     return activeService;
   },
 };
+
+bindPDFPrintServiceInstance(externalServices);
 
 export {
   PDFPrintService,

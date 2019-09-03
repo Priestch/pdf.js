@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 
-import { AppOptions } from './app_options';
+import { bindPDFPrintServiceInstance } from './application';
 import { CSS_UNITS } from './ui_utils';
-import { PDFPrintServiceFactory } from './app';
 import { shadow } from 'pdfjs-lib';
 
 // Creates a placeholder with div and canvas with right size for the page.
-function composePage(pdfDocument, pageNumber, size, printContainer) {
+function composePage(pdfDocument, pageNumber, size, printContainer,
+                     appOptions) {
   let canvas = document.createElement('canvas');
 
   // The size of the canvas in pixels for printing.
-  const PRINT_RESOLUTION = AppOptions.get('printResolution') || 150;
+  const PRINT_RESOLUTION = appOptions.get('printResolution') || 150;
   const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
@@ -69,21 +69,22 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
   };
 }
 
-function FirefoxPrintService(pdfDocument, pagesOverview, printContainer) {
+function FirefoxPrintService(pdfDocument, pagesOverview, printContainer, app) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
+  this.app = app;
 }
 
 FirefoxPrintService.prototype = {
   layout() {
-    const { pdfDocument, pagesOverview, printContainer, } = this;
+    const { pdfDocument, pagesOverview, printContainer, app, } = this;
 
     const body = document.querySelector('body');
     body.setAttribute('data-pdfjsprinting', true);
 
     for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
-      composePage(pdfDocument, i + 1, pagesOverview[i], printContainer);
+      composePage(pdfDocument, i + 1, pagesOverview[i], printContainer, app);
     }
   },
 
@@ -95,7 +96,7 @@ FirefoxPrintService.prototype = {
   },
 };
 
-PDFPrintServiceFactory.instance = {
+let PDFPrintServiceInstance = {
   get supportsPrinting() {
     let canvas = document.createElement('canvas');
     let value = 'mozPrintCallback' in canvas;
@@ -107,6 +108,8 @@ PDFPrintServiceFactory.instance = {
     return new FirefoxPrintService(pdfDocument, pagesOverview, printContainer);
   },
 };
+
+bindPDFPrintServiceInstance(PDFPrintServiceInstance);
 
 export {
   FirefoxPrintService,

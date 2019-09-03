@@ -17,7 +17,6 @@ import '../extensions/firefox/tools/l10n';
 import { createObjectURL, PDFDataRangeTransport, shadow, URL } from 'pdfjs-lib';
 import { BasePreferences } from './preferences';
 import { DEFAULT_SCALE_VALUE } from './ui_utils';
-import { PDFViewerApplication } from './app';
 
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
@@ -163,7 +162,7 @@ class MozL10n {
   }
 }
 
-(function listenFindEvents() {
+function listenFindEvents(app) {
   const events = [
     'find',
     'findagain',
@@ -173,14 +172,14 @@ class MozL10n {
     'findbarclose',
   ];
   const handleEvent = function({ type, detail, }) {
-    if (!PDFViewerApplication.initialized) {
+    if (!app.initialized) {
       return;
     }
     if (type === 'findbarclose') {
-      PDFViewerApplication.eventBus.dispatch(type, { source: window, });
+      app.eventBus.dispatch(type, { source: window, });
       return;
     }
-    PDFViewerApplication.eventBus.dispatch('find', {
+    app.eventBus.dispatch('find', {
       source: window,
       type: type.substring('find'.length),
       query: detail.query,
@@ -195,31 +194,31 @@ class MozL10n {
   for (const event of events) {
     window.addEventListener(event, handleEvent);
   }
-})();
+};
 
-(function listenZoomEvents() {
+function listenZoomEvents(app) {
   const events = [
     'zoomin',
     'zoomout',
     'zoomreset',
   ];
   const handleEvent = function({ type, detail, }) {
-    if (!PDFViewerApplication.initialized) {
+    if (!app.initialized) {
       return;
     }
     // Avoid attempting to needlessly reset the zoom level *twice* in a row,
     // when using the `Ctrl + 0` keyboard shortcut.
     if (type === 'zoomreset' && // eslint-disable-next-line max-len
-        PDFViewerApplication.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE) {
+        app.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch(type, { source: window, });
+    app.eventBus.dispatch(type, { source: window, });
   };
 
   for (const event of events) {
     window.addEventListener(event, handleEvent);
   }
-})();
+}
 
 class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   requestDataRange(begin, end) {
@@ -232,7 +231,7 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   }
 }
 
-PDFViewerApplication.externalServices = {
+let externalServices = {
   updateFindControlState(data) {
     FirefoxCom.request('updateFindControlState', data);
   },
@@ -261,7 +260,7 @@ PDFViewerApplication.externalServices = {
             new FirefoxComDataRangeTransport(args.length, args.data, args.done);
 
           callbacks.onOpenWithTransport(args.pdfUrl, args.length,
-                                        pdfDataRangeTransport);
+            pdfDataRangeTransport);
           break;
         case 'range':
           pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
@@ -350,7 +349,14 @@ document.mozL10n.setExternalLocalizerServices({
   },
 });
 
+function bindExternalServices(app) {
+  listenFindEvents(app);
+  listenZoomEvents(app);
+  app.externalServices = externalServices;
+}
+
 export {
   DownloadManager,
   FirefoxCom,
+  bindExternalServices,
 };

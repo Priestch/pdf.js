@@ -248,15 +248,13 @@ if (typeof PDFJSDev === 'undefined' ||
   };
 }
 
-const userOptions = Object.create(null);
-
 class AppOptions {
   constructor() {
-    throw new Error('Cannot initialize AppOptions.');
+    this.userOptions = Object.create(null);
   }
 
-  static get(name) {
-    const userOption = userOptions[name];
+  get(name) {
+    const userOption = this.userOptions[name];
     if (userOption !== undefined) {
       return userOption;
     }
@@ -267,7 +265,7 @@ class AppOptions {
     return undefined;
   }
 
-  static getAll(kind = null) {
+  getAll(kind = null) {
     const options = Object.create(null);
     for (const name in defaultOptions) {
       const defaultOption = defaultOptions[name];
@@ -286,19 +284,19 @@ class AppOptions {
           throw new Error(`Invalid type for preference: ${name}`);
         }
       }
-      const userOption = userOptions[name];
+      const userOption = this.userOptions[name];
       options[name] = (userOption !== undefined ? userOption :
                        (defaultOption.compatibility || defaultOption.value));
     }
     return options;
   }
 
-  static set(name, value) {
-    userOptions[name] = value;
+  set(name, value) {
+    this.userOptions[name] = value;
   }
 
-  static remove(name) {
-    delete userOptions[name];
+  remove(name) {
+    delete this.userOptions[name];
   }
 }
 

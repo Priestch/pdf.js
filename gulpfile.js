@@ -561,11 +561,11 @@ gulp.task('default_preferences', gulp.series('default_preferences-pre',
     function(done) {
   var AppOptionsLib =
     require('./' + DEFAULT_PREFERENCES_DIR + 'lib/web/app_options.js');
-  var AppOptions = AppOptionsLib.AppOptions;
+  var appOptions = new AppOptionsLib.AppOptions();
   var OptionKind = AppOptionsLib.OptionKind;
 
   createStringSource('default_preferences.json', JSON.stringify(
-      AppOptions.getAll(OptionKind.PREFERENCE), null, 2))
+      appOptions.getAll(OptionKind.PREFERENCE), null, 2))
     .pipe(gulp.dest(BUILD_DIR))
     .on('end', done);
 }));

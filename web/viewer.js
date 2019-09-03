@@ -37,23 +37,33 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
 
 let pdfjsWebApp, pdfjsWebAppOptions;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
-  pdfjsWebApp = require('./app.js');
-  pdfjsWebAppOptions = require('./app_options.js');
+  let pdfjsAppLib = require('./application.js');
+  let app = new pdfjsAppLib.PDFViewerApplication();
+  app.bindExternalServices();
+  pdfjsWebApp = {
+    PDFViewerApplication: app,
+  };
+  pdfjsWebAppOptions = {
+    AppOptions: pdfjsWebApp.appOptions,
+  };
 }
 
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  require('./firefoxcom.js');
-  require('./firefox_print_service.js');
-}
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
-  require('./genericcom.js');
-}
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
-  require('./chromecom.js');
-}
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
-  require('./pdf_print_service.js');
-}
+// if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+//   const firefoxCom = require('./firefoxcom.js');
+//   firefoxCom.bindExternalServices(pdfjsWebApp.PDFViewerApplication);
+//   require('./firefox_print_service.js');
+// }
+// if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
+//   const generiCom = require('./genericcom.js');
+//   generiCom.bindExternalServices(pdfjsWebApp.PDFViewerApplication);
+// }
+// if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+//   const chromeCom = require('./chromecom.js');
+//   chromeCom.bindExternalServices(pdfjsWebApp.PDFViewerApplication);
+// }
+// if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
+//   require('./pdf_print_service.js');
+// }
 
 function getViewerConfiguration() {
   return {
